@@ -1,0 +1,15 @@
+# Web Framework & Server
+fastapi
+uvicorn
+
+# API Requests (For your GitHub and Weather tools)
+requests
+
+# Data Validation (Crucial for enforcing Agent JSON outputs)
+pydantic
+
+# Environment Variable Management
+python-dotenv
+
+# LLM Client
+groq
