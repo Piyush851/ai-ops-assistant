@@ -1,20 +1,54 @@
 # The entry point that ties the user input to the 3-agent flow# main.py
-from fastapi import FastAPI
+# main.py (Infrastructure Update)
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+import json
+import asyncio
 from pydantic import BaseModel
-# from api.routes import router as api_router  <-- We will connect this later
+
 
 app = FastAPI(title="AI Ops Assistant API")
 
-# Infrastructure: Enable CORS so your React frontend can talk to this API
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173"], # React/Vite default ports
+    allow_origins=["*"], # Adjust this to your React port in production
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+@app.websocket("/ws/chat")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    try:
+        while True:
+            # 1. Receive message from React
+            user_message = await websocket.receive_text()
+            
+            # 2. Stream Status 1: Planner
+            await websocket.send_json({"type": "status", "message": "🧠 Planner Agent is analyzing the request..."})
+            await asyncio.sleep(1) # Simulating your partner's LLM delay
+            
+            # 3. Stream Status 2: Executor
+            await websocket.send_json({"type": "status", "message": "⚙️ Executor Agent is fetching data from APIs..."})
+            await asyncio.sleep(2) # Simulating API calls
+            
+            # 4. Stream Status 3: Verifier
+            await websocket.send_json({"type": "status", "message": "✅ Verifier Agent is checking the output..."})
+            await asyncio.sleep(1)
+            
+            # 5. Send Final Output (Your partner will replace this mock data with real JSON)
+            mock_final_response = {
+                "type": "result",
+                "message": "Here is the data I found for you.",
+                "data_type": "weather", # or "github"
+                "payload": {"temperature": "28°C", "wind_speed": "12 km/h"}
+            }
+            await websocket.send_json(mock_final_response)
+
+    except WebSocketDisconnect:
+        print("Client disconnected")
+        
 # Request schema
 class ChatRequest(BaseModel):
     prompt: str
